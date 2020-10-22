@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.min.js" integrity="sha512-quHCp3WbBNkwLfYUMd+KwBAgpVukJu5MncuQaWXgCrfgcxCJAq/fo+oqrRKOj+UKEmyMCG3tb8RB63W+EmrOBg==" crossorigin="anonymous"></script>
+    <link rel="shortcut icon" href="#"/>
+</head>
+
+<body>
+
+    <div class = "container-fluid">
+        <h1 class='row'>Login</h1>
+
+        <main>
+
+            <div class="row">
+                <label for="username">Username</label>
+                <input type="text" name="username" id="username">
+            </div>
+            
+            <div class="row">
+                <label for="password">password</label>
+                <input type="password" name="password" id="password">
+            </div>
+
+            <div class="row">
+               <button onclick="login()">Login</button>
+               <button onclick="getDashboard()">Get Dashboard</button>
+               <button onclick="settingsLoad()">Load Settings</button>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        function login() 
+        {
+            const data = 
+            {
+                // get the values from the text boxes when the button is hit
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+            };
+
+            axios.post('/api/login', data)
+            .then(res => 
+            {
+                console.log(res);
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                if (res && res.data && res.data.success) 
+                {
+                    const token = res.data.token;
+                    localStorage.setItem('jwt', token);
+                    getDashboard();
+                }
+            });
+        }
+
+        // get data from dashboard from above with header including Authorization of token
+        function getDashboard()
+        {
+            const token = localStorage.getItem('jwt');
+            // Access the info on dashboard using a bearer token, will be denied if you have no token or wrong. 
+            axios.get('/api/dashboard', 
+            {
+                headers: 
+                {
+                    // may need to modify this cuz $var doesnt work
+                    'Authorization': `Bearer ${token}`
+                    //'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJmYWJpbyIsImlhdCI6MTYwMzI0MDI3NywiZXhwIjoxNjAzODQ1MDc3fQ.wlvMVArc8eC5_pxC2OKgfVjRIo8UI-sQfRUgXtYJNTA'
+                }
+            }).then(res => 
+            {
+                if (res && res.data && res.data.success) 
+                {
+                    history.pushState(token, null, '/api/dashboard');
+                    document.querySelector('h1.row').innerHTML = 'Dashboard';
+                    document.querySelector('main').innerHTML = res.data.myContent;
+                }
+            });
+        }
+
+
+        function settingsLoad()
+        {
+            const token = localStorage.getItem('jwt'); 
+
+            // Changes the url to /settings when you hit the settings button
+            // history.pushState([data], [title], [url]);   pushes a new url onto the stack so its a new url AND you can backtrack/back button
+            // history.pushState(null, null, document.location);
+            //history.pushState(null, null, '/');
+
+            axios.get('/api/settings', 
+            {
+                headers: 
+                {
+                    'Authorization': `Bearer ${token}`
+                    //'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJmYWJpbyIsImlhdCI6MTYwMzI0MDI3NywiZXhwIjoxNjAzODQ1MDc3fQ.wlvMVArc8eC5_pxC2OKgfVjRIo8UI-sQfRUgXtYJNTA'
+                }
+            }).then(res => 
+            {
+                if (res && res.data && res.data.success) 
+                {
+                    history.pushState(token, null, '/api/settings');
+                    document.querySelector('h1.row').innerHTML = 'Settings';
+                    document.querySelector('main').innerHTML = res.data.textMessage;
+                }
+            });
+            
+        }
+
+        function onLoad()
+        {
+            const token = localStorage.getItem('jwt');
+            window.addEventListener('popstate', function(e) 
+            {
+                // e.state is equal to the data-attribute of the last image we clicked
+            });
+            
+            if(token)
+            {
+                getDashboard();
+            }
+        }
+        //onLoad();
+    </script>
+
+</body>
+</html>
